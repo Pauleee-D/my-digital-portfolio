@@ -9,6 +9,8 @@
     "lint": "eslint app components lib hooks --ignore-pattern node_modules/"
   },
   "dependencies": {
+    "@arcjet/inspect": "^1.0.0-beta.9",
+    "@arcjet/next": "^1.0.0-beta.9",
     "@aws-sdk/client-rds-data": "latest",
     "@clerk/nextjs": "^6.16.0",
     "@cloudflare/workers-types": "latest",
@@ -61,8 +63,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
-    "dotenv": "latest",
-    "drizzle-kit": "latest",
+    "dotenv": "^17.2.0",
+    "drizzle-kit": "^0.18.1",
     "drizzle-zod": "^0.7.1",
     "embla-carousel-react": "8.5.1",
     "expo-sqlite": "latest",
