@@ -4,9 +4,10 @@ import { db, subscribers } from "@/lib/db"
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { ActionState, newsletterSubscriptionSchema } from "@/lib/types"
+import { isAdmin } from "@/lib/auth"
 
-// Define the interface but don't export it directly
-interface NewsletterState extends ActionState {
+// Define and export the interface for newsletter state
+export interface NewsletterState extends ActionState {
   email?: string;
   name?: string;
 }
@@ -79,9 +80,17 @@ export async function subscribeToNewsletter(
 
 /**
  * Server action to get all newsletter subscribers
+ * Only accessible by admin users
  */
-export async function getSubscribers(): Promise<Array<typeof subscribers.$inferSelect>> {  
+export async function getSubscribers(): Promise<Array<typeof subscribers.$inferSelect>> {
   try {
+    // Check if current user is admin
+    const userIsAdmin = await isAdmin()
+    if (!userIsAdmin) {
+      console.error("Unauthorized attempt to access subscriber list")
+      throw new Error("Unauthorized. Admin privileges required")
+    }
+
     const allSubscribers = await db.select().from(subscribers).orderBy(subscribers.createdAt)
     return allSubscribers
   } catch (error) {

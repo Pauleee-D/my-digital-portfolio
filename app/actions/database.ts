@@ -2,6 +2,7 @@
 
 import { db, subscribers, blogPosts } from "@/lib/db";
 import { sql } from "drizzle-orm";
+import { isAdmin } from "@/lib/auth";
 
 export type DatabaseTestResult = {
   success: boolean;
@@ -16,6 +17,16 @@ export type DatabaseTestResult = {
 
 export async function checkDatabaseStatus(): Promise<DatabaseTestResult> {
   try {
+    // Check if current user is admin
+    const userIsAdmin = await isAdmin();
+    if (!userIsAdmin) {
+      return {
+        success: false,
+        message: "Unauthorized. Admin privileges required",
+        error: "Access denied"
+      };
+    }
+
     // Get the most recent createdAt timestamp from subscribers as a proxy for DB time
     const latestSubscriber = await db.select({ createdAt: subscribers.createdAt })
       .from(subscribers)

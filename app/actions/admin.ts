@@ -37,30 +37,42 @@ export async function checkAdminStatus(): Promise<ActionState & {data?: {isAdmin
 
 /**
  * Server action to get the current authenticated user with role information.
- * 
+ *
  * This function retrieves the currently authenticated user, including their
  * role and permissions by calling the getCurrentUser() helper function.
- * 
+ * Only accessible by admin users to prevent unauthorized access to user role information.
+ *
  * @returns {Promise<ActionState & {data?: {user: User | null}}>} An object containing:
  *   - status: "success" or "error" indicating the operation result
  *   - message: A description of the operation outcome
  *   - data: (on success) An object with the user information or null if not authenticated
  *        The User type includes: id, email, name, role, clerkId, and timestamps
- * 
+ *
  * Used with useActionState hook in React 19 components to display current user data
  * and conditionally render UI elements based on authentication status.
+ *
+ * Security: This function is protected and will return an error if called by non-admin users.
  */
 export async function getUser(): Promise<ActionState & {data?: {user: User | null}}> {
   try {
+    // Check if current user is admin
+    const userIsAdmin = await isAdmin();
+    if (!userIsAdmin) {
+      return {
+        status: "error" as const,
+        message: "Unauthorized. Admin privileges required"
+      };
+    }
+
     const user = await getCurrentUser();
-    return { 
+    return {
       status: "success" as const,
       message: "User retrieved successfully",
       data: { user }
     };
   } catch (error) {
     console.error("Error getting user:", error);
-    return { 
+    return {
       status: "error" as const,
       message: "Failed to get user information"
     };
@@ -147,50 +159,50 @@ export async function setUserRole(email: string, role: 'admin' | 'user'): Promis
   try {
     // First check if the current user is an admin
     const userIsAdmin = await isAdmin();
-    
+
     if (!userIsAdmin) {
       return {
         status: "error" as const,
         message: "Unauthorized. Admin privileges required"
       };
     }
-    
+
     if (!email || !role) {
       return {
         status: "error" as const,
         message: "Email and role are required"
       };
     }
-    
+
     if (role !== 'admin' && role !== 'user') {
       return {
         status: "error" as const,
         message: "Role must be 'admin' or 'user'"
       };
     }
-    
+
     // Check if user exists
     const existingUser = await db
       .select()
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
-    
+
     if (existingUser.length === 0) {
       return {
         status: "error" as const,
         message: "User not found"
       };
     }
-    
+
     // Update user role
     await db
       .update(users)
       .set({ role })
       .where(eq(users.email, email));
-    
-    return { 
-      status: "success" as const, 
+
+    return {
+      status: "success" as const,
       message: `User role updated to ${role}`
     };
   } catch (error) {
@@ -198,6 +210,57 @@ export async function setUserRole(email: string, role: 'admin' | 'user'): Promis
     return {
       status: "error" as const,
       message: "Failed to set user role"
+    };
+  }
+}
+
+/**
+ * Server action to get all users with admin role.
+ *
+ * This function retrieves only users who have admin privileges.
+ * Access is restricted to administrators only.
+ *
+ * @returns {Promise<ActionState & {data?: {admins: User[], count: number}}>} An object containing:
+ *   - status: "success" or "error" indicating the operation result
+ *   - message: A description of the operation outcome or error reason
+ *   - data: (on success) An object with:
+ *        - admins: Array of User objects with admin role
+ *        - count: Total number of admin users
+ *
+ * Security: This function is protected and will return an error if called by non-admin users.
+ */
+export async function getAdminUsers(): Promise<ActionState & {data?: {admins: User[], count: number}}> {
+  try {
+    // First check if the current user is an admin
+    const userIsAdmin = await isAdmin();
+
+    if (!userIsAdmin) {
+      return {
+        status: "error" as const,
+        message: "Unauthorized. Admin privileges required"
+      };
+    }
+
+    // Get all users with admin role
+    const adminsList = await db
+      .select()
+      .from(users)
+      .where(eq(users.role, 'admin'))
+      .orderBy(users.createdAt);
+
+    return {
+      status: "success" as const,
+      message: `Found ${adminsList.length} admin user(s)`,
+      data: {
+        admins: adminsList,
+        count: adminsList.length
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching admin users:", error);
+    return {
+      status: "error" as const,
+      message: "Failed to fetch admin users"
     };
   }
 }

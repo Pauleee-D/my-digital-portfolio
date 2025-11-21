@@ -3,7 +3,7 @@ import { isAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 // Define protected routes that require authentication
-const isProtectedRoute = createRouteMatcher(['/admin','/resources(.*)', '/projects']);
+const isProtectedRoute = createRouteMatcher(['/admin', '/db-test', '/resources(.*)', '/projects']);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) await auth.protect()

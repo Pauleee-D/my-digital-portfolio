@@ -1,16 +1,18 @@
 import { isAdmin } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserRoleManagement } from "@/components/user-role-management";
+import { AdminUsersList } from "@/components/admin-users-list";
 import Link from "next/link";
 import { Database } from "lucide-react";
 
+// Mark this page as dynamic since it uses authentication
+export const dynamic = 'force-dynamic';
+
 export default async function AdminPage() {
-  // Assuming isAdmin is a valid function to protect the route
-  if (!isAdmin) {
+  // Check if the current user has admin privileges
+  const adminStatus = await isAdmin();
+  if (!adminStatus) {
     return (
       <div className="container py-12">
         <p>Unauthorized</p>
@@ -42,6 +44,10 @@ export default async function AdminPage() {
         </Card>
       </div>
 
+      <div className="mb-8">
+        <AdminUsersList />
+      </div>
+
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>User Management</CardTitle>
@@ -49,39 +55,6 @@ export default async function AdminPage() {
         </CardHeader>
         <CardContent>
           <UserRoleManagement />
-        </CardContent>
-      </Card>
-
-      {/* Example of another admin section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>System Settings</CardTitle>
-          <CardDescription>Configure system-wide settings.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="siteName">Site Name</Label>
-              <Input id="siteName" defaultValue="CyberApp" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="adminEmail">Admin Email</Label>
-              <Input id="adminEmail" type="email" defaultValue="admin@cyberapp.com" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="maintenanceMode">Maintenance Mode</Label>
-              <Select defaultValue="disabled">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="enabled">Enabled</SelectItem>
-                  <SelectItem value="disabled">Disabled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="submit">Save Settings</Button>
-          </form>
         </CardContent>
       </Card>
     </div>

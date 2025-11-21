@@ -1,9 +1,32 @@
 import { checkDatabaseStatus } from "@/app/actions/database";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { isAdmin } from "@/lib/auth";
 
+// Mark this page as dynamic since it uses authentication
+export const dynamic = 'force-dynamic';
 
 export default async function DbTestPage() {
+  // Check if the current user has admin privileges
+  const adminStatus = await isAdmin();
+  if (!adminStatus) {
+    return (
+      <div className="container py-12">
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Unauthorized</CardTitle>
+            <CardDescription>You do not have permission to access this page.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              This page is restricted to administrators only.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const result = await checkDatabaseStatus();
 
   return (

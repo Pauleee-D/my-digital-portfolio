@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm"
 import { formatDate } from "@/lib/utils"
 import { notFound } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { BlogContent } from "@/components/blog-content"
 
 async function getBlogPost(slug: string) {
   try {
@@ -95,10 +96,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             )}
           </div>
 
-          <div
-            className="mt-8 prose prose-gray dark:prose-invert max-w-none"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+          <BlogContent content={post.content} />
         </div>
       </div>
 
