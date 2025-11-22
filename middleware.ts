@@ -16,7 +16,7 @@ export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    // API routes are NOT protected by Clerk - they use Arcjet instead
+    // '/(api|trpc)(.*)',  // Removed to allow security testing tools
   ],
 };
