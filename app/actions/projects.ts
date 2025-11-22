@@ -5,11 +5,12 @@ import { isAdmin } from "@/lib/auth";
 import { asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { 
+import {
   Project,
   projectCreateInputSchema,
   projectSchema
 } from "@/lib/types";
+import { sanitizeStringArray, sanitizeString, containsSuspiciousPatterns } from "@/lib/sanitize";
 
 /**
  * Server action to fetch all projects
@@ -91,20 +92,38 @@ export async function createProject(
     // Validate input data using Zod schema
     const validatedData = projectCreateInputSchema.safeParse(data);
     if (!validatedData.success) {
-      return { 
-        success: false, 
-        message: "Validation error: " + validatedData.error.message, 
-        project: null 
+      return {
+        success: false,
+        message: "Validation error: " + validatedData.error.message,
+        project: null
       };
     }
-    
+
+    // ✅ SECURITY: Sanitize inputs to prevent XSS attacks
+    const sanitizedTitle = sanitizeString(validatedData.data.title, 200);
+    const sanitizedDescription = sanitizeString(validatedData.data.description, 1000);
+    const sanitizedIcon = sanitizeString(validatedData.data.icon, 50);
+
+    // Sanitize and limit items array (max 100 items, 500 chars each)
+    const sanitizedItems = sanitizeStringArray(validatedData.data.items, 100, 500);
+
+    // Check for suspicious patterns
+    const allText = [sanitizedTitle, sanitizedDescription, ...sanitizedItems].join(' ');
+    if (containsSuspiciousPatterns(allText)) {
+      return {
+        success: false,
+        message: "Invalid content detected. Please remove any scripts or HTML tags.",
+        project: null
+      };
+    }
+
     // Insert the new project into the database
     // Drizzle handles createdAt/updatedAt automatically if defaultNow() is set in schema
     const inserted = await db.insert(projects).values({
-      title: validatedData.data.title,
-      description: validatedData.data.description,
-      icon: validatedData.data.icon,
-      items: validatedData.data.items, // Ensure items are correctly formatted JSON for DB if needed
+      title: sanitizedTitle,
+      description: sanitizedDescription,
+      icon: sanitizedIcon,
+      items: sanitizedItems,
     }).returning(); // Add returning() to get the inserted project data
 
     if (!inserted || inserted.length === 0) {

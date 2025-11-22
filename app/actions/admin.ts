@@ -4,6 +4,7 @@ import { isAdmin, getCurrentUser } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { User, ActionState } from "@/lib/types";
+import { aj, createArcjetRequest, RATE_LIMITS } from "@/lib/arcjet-server";
 
 /**
  * Server action to check if the current user has admin privileges.
@@ -157,6 +158,31 @@ export async function getUsers(): Promise<ActionState & {data?: {users: User[]}}
  */
 export async function setUserRole(email: string, role: 'admin' | 'user'): Promise<ActionState> {
   try {
+    // ✅ ARCJET RATE LIMITING - Protect admin actions from abuse
+    try {
+      const req = await createArcjetRequest();
+      const decision = await aj.protect(req, { requested: RATE_LIMITS.ADMIN });
+
+      console.log("Arcjet decision for setUserRole:", decision);
+
+      if (decision.isDenied()) {
+        if (decision.reason.isRateLimit()) {
+          return {
+            status: "error" as const,
+            message: "Too many requests. Please slow down and try again in a few seconds.",
+          };
+        }
+
+        return {
+          status: "error" as const,
+          message: "Request blocked for security reasons.",
+        };
+      }
+    } catch (error) {
+      console.error("Arcjet protection error:", error);
+      // Continue - don't block if Arcjet fails
+    }
+
     // First check if the current user is an admin
     const userIsAdmin = await isAdmin();
 
@@ -181,7 +207,8 @@ export async function setUserRole(email: string, role: 'admin' | 'user'): Promis
       };
     }
 
-    // Check if user exists
+    // Check if user exists and update role
+    // Note: We don't reveal if user exists or not to prevent user enumeration
     const existingUser = await db
       .select()
       .from(users)
@@ -189,9 +216,11 @@ export async function setUserRole(email: string, role: 'admin' | 'user'): Promis
       .limit(1);
 
     if (existingUser.length === 0) {
+      // ✅ SECURITY: Use generic error message to prevent user enumeration
+      // Don't reveal whether the user exists or not
       return {
         status: "error" as const,
-        message: "User not found"
+        message: "Unable to update user role. Please verify the information and try again."
       };
     }
 

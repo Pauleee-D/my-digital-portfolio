@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { ActionState, newsletterSubscriptionSchema } from "@/lib/types"
 import { isAdmin } from "@/lib/auth"
+import { aj, createArcjetRequest, RATE_LIMITS } from "@/lib/arcjet-server"
 
 // Define and export the interface for newsletter state
 export interface NewsletterState extends ActionState {
@@ -29,6 +30,39 @@ export async function subscribeToNewsletter(
   formData: FormData
 ): Promise<NewsletterState> {
 
+  // ✅ ARCJET RATE LIMITING - Protect against spam and abuse
+  try {
+    const req = await createArcjetRequest();
+    const decision = await aj.protect(req, { requested: RATE_LIMITS.NEWSLETTER });
+
+    console.log("Arcjet decision for newsletter:", decision);
+
+    if (decision.isDenied()) {
+      if (decision.reason.isRateLimit()) {
+        return {
+          status: "error",
+          message: "Too many subscription attempts. Please try again in a few seconds.",
+        };
+      }
+
+      if (decision.reason.isBot()) {
+        return {
+          status: "error",
+          message: "Bot detected. If you're human, please try again.",
+        };
+      }
+
+      return {
+        status: "error",
+        message: "Request blocked for security reasons. Please try again later.",
+      };
+    }
+  } catch (error) {
+    console.error("Arcjet protection error:", error);
+    // Continue anyway - don't block legitimate users if Arcjet fails
+    // In production, you might want to handle this differently
+  }
+
   // Parse the form data
   const email = formData.get("email") as string
   const name = formData.get("name") as string
@@ -47,9 +81,11 @@ export async function subscribeToNewsletter(
     const existingSubscriber = await db.select().from(subscribers).where(eq(subscribers.email, email))
 
     if (existingSubscriber.length > 0) {
+      // ✅ SECURITY: Use generic success message to prevent email enumeration
+      // Don't reveal if email is already in database
       return {
-        status: "error",
-        message: "You are already subscribed to our newsletter",
+        status: "success",
+        message: "Thank you for your interest! If you're not already subscribed, you'll receive updates soon.",
         email,
         name,
       }
