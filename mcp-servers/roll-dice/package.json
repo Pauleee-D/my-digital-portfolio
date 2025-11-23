@@ -1,0 +1,24 @@
+{
+  "name": "@paulz/mcp-roll-dice",
+  "version": "1.0.0",
+  "description": "MCP server for dice rolling with authentication readiness",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "prepare": "npm run build"
+  },
+  "keywords": ["mcp", "dice", "authentication", "security"],
+  "author": "Paul D",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
