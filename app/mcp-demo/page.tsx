@@ -19,6 +19,17 @@ export default function MCPDemoPage() {
               <p className="max-w-[700px] text-gray-400 md:text-xl/relaxed">
                 Add powerful dice rolling to Claude Desktop using Model Context Protocol
               </p>
+              <div className="flex gap-4 mt-4">
+                <a
+                  href="https://github.com/paulbijord/rolldice-mcpserver"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  <Code2 className="h-4 w-4" />
+                  View on GitHub
+                </a>
+              </div>
             </div>
           </div>
         </div>
