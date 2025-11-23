@@ -72,7 +72,7 @@ export async function subscribeToNewsletter(
   if (!validationResult.success) {
     return {
       status: "error",
-      message: validationResult.error.errors[0]?.message || "Invalid input data",
+      message: validationResult.error.issues[0]?.message || "Invalid input data",
     }
   }
 
