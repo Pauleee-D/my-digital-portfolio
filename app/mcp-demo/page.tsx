@@ -21,7 +21,7 @@ export default function MCPDemoPage() {
               </p>
               <div className="flex gap-4 mt-4">
                 <a
-                  href="https://github.com/paulbijord/rolldice-mcpserver"
+                  href="https://github.com/Pauleee-D/rolldice-mcpserver"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors"
